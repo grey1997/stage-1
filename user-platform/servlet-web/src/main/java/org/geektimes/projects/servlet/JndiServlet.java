@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -23,22 +24,19 @@ public class JndiServlet extends HttpServlet {
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.setCharacterEncoding("UTF-8");
         response.setContentType("text/html;charset=utf-8");
+        PrintWriter writer = response.getWriter();
         try (Connection connection = getConnection()) {
             if(connection != null) {
-                response.getWriter().write(SUCCESS_MESSAGE);
+                writer.write(SUCCESS_MESSAGE);
             } else {
-                response.getWriter().write(FAILED_MESSAGE);
+                writer.write(FAILED_MESSAGE);
             }
-        } catch (SQLException throwables) {
-            response.getWriter().write(FAILED_MESSAGE);
-            throwables.printStackTrace();
-        } catch (NamingException e) {
-            response.getWriter().write(FAILED_MESSAGE);
-            e.printStackTrace();
-        } catch (IOException e) {
-            response.getWriter().write(FAILED_MESSAGE);
+        } catch (SQLException | NamingException e) {
+            writer.write(FAILED_MESSAGE);
             e.printStackTrace();
         }
+        writer.flush();
+        writer.close();
     }
 
     private Connection getConnection () throws SQLException, NamingException {
@@ -46,7 +44,6 @@ public class JndiServlet extends HttpServlet {
         Context envCtx = (Context) initCtx.lookup("java:comp/env");
         DataSource ds = (DataSource) envCtx.lookup("jdbc/EmployeeDB");
 
-        Connection conn = ds.getConnection();
-        return conn;
+        return ds.getConnection();
     }
 }
